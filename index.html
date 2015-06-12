@@ -1,0 +1,104 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>highcharts</title>
+  <script src="js/jquery-1.11.3.min.js"></script>
+  <script src="js/highcharts.js"></script>
+</head>
+<body>
+  <div id="container" style="max-width: 800px; height: 400px; margin: 0 auto"></div>
+  <script>
+  var moneyHandler = function(data) {
+    var t = [], d = [], i = 0;
+    var info = GroupByMonth(data);
+    while(i < info.length) {
+      d.push({'y': info[i].total_fee, 'count': info[i].total_courses});
+      var tmp = info[i].date;
+      t.push(tmp.substr(0, tmp.lastIndexOf('-')));
+      i++;
+    }
+    drawChart(t, d);
+  };
+
+  function GroupByMonth(data) {
+    var i = 1, t = '', t0 = '', j = 1;
+    while(i < data.length) {
+      t = data[i].date;
+      t0 = data[i - 1].date;
+
+      this_date = t.substr(0, t.lastIndexOf('-'));
+      prev_date = t0.substr(0, t0.lastIndexOf('-'));
+      if(this_date == prev_date) {
+        j += 1;
+        data[i - 1].total_fee += data[i].total_fee;
+        data[i - 1].total_courses = j;
+        data.splice(i, 1);
+      } else {
+        i++;
+        j = 1;
+        data[i - 1].total_courses = 1;
+      }
+    }
+    return data;
+  }
+
+  var drawChart = function(date, data) {
+    $('#container').highcharts({
+      chart: {
+        type: 'column'
+      },
+      title: {
+        text: '好奇猫每月课程销售表',
+        x: -20 //center
+      },
+      xAxis: {
+        categories: date
+      },
+      yAxis: {
+        min: 0,
+        tickInterval: 50,
+        title: {
+          text: '金额（元）'
+        },
+        plotLines: [{
+          value: 0,
+          width: 1,
+          color: '#808080'
+        }]
+      },
+      tooltip: {
+        valueSuffix: '元',
+        backgroundColor: {
+          linearGradient: [0, 0, 0, 60],
+          stops: [
+              [0, '#FFFFFF'],
+              [1, '#E0E0E0']
+          ]
+        },
+        borderWidth: 1,
+        borderColor: '#AAA',
+        formatter: function () {
+          return "收入: " + this.point.y + " 元<br/>课程数: " + this.point.count + " 门";
+        }
+      },
+      legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle',
+        borderWidth: 0
+      },
+      series: [{
+        name: '金额',
+        color: '#008c7e',
+        data: data
+      }]
+    });
+  };
+
+  var url = "http://haoqicat.com/api/money.json?callback=moneyHandler";
+  var script = document.createElement('script');
+  script.setAttribute('src', url);
+  document.getElementsByTagName('head')[0].appendChild(script);
+  </script>
+</body>
+</html>
